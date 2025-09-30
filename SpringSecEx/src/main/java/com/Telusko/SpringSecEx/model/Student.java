@@ -1,4 +1,4 @@
-package com.Telusko.SpringSecEx;
+package com.Telusko.SpringSecEx.model;
 
 public class Student {
 

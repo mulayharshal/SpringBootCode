@@ -1,8 +1,6 @@
 package com.Telusko.SpringSecEx.config;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,64 +11,72 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     @Autowired
+    private JwtFilter jwtFilter;
+
+    @Autowired
     private UserDetailsService userDetailsService;
 
     @Bean
-    public SecurityFilterChain SecurityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(costomizer -> costomizer.disable());
-        http.authorizeHttpRequests(request -> request
-                .requestMatchers("register","login")
-                .permitAll().anyRequest().authenticated());
-//        http.formLogin(Customizer.withDefaults());
-        http.httpBasic(Customizer.withDefaults());
-        http.sessionManagement( session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-        return http.build();
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+        return http.csrf(customizer -> customizer.disable()).
+                authorizeHttpRequests(request -> request
+                        .requestMatchers("login", "register").permitAll()
+                        .anyRequest().authenticated()).
+                httpBasic(Customizer.withDefaults()).
+                sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
+
+
     }
+
+
+//    @Bean
+//    public UserDetailsService userDetailsService() {
+//
+//        UserDetails user1 = User
+//                .withDefaultPasswordEncoder()
+//                .username("kiran")
+//                .password("k@123")
+//                .roles("USER")
+//                .build();
+//
+//        UserDetails user2 = User
+//                .withDefaultPasswordEncoder()
+//                .username("harsh")
+//                .password("h@123")
+//                .roles("ADMIN")
+//                .build();
+//        return new InMemoryUserDetailsManager(user1, user2);
+//    }
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider =new DaoAuthenticationProvider();
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setPasswordEncoder(new BCryptPasswordEncoder(12));
         provider.setUserDetailsService(userDetailsService);
-        return  provider;
+
+
+        return provider;
     }
 
     @Bean
-    public AuthenticationManager  authenticationManager(AuthenticationConfiguration config) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
+
     }
 
-
-    @Bean
-    public UserDetailsService userDetailsService() {
-
-        UserDetails User1= User
-                .withDefaultPasswordEncoder()
-                .username("hm")
-                .password("1234")
-                .roles("USER")
-                .build();
-
-        UserDetails User2= User
-                .withDefaultPasswordEncoder()
-                .username("team")
-                .password("1234")
-                .roles("ADMIN")
-                .build();
-        return  new InMemoryUserDetailsManager(User1,User2 );
-    }
 
 }
